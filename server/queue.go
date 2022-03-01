@@ -1,18 +1,18 @@
 package server
 
 import (
-	"io"
 	"liteq/queue"
 	"liteq/queue/proto"
-	"log"
 
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // QueueService
-func (*server) GetTasks(stream proto.LiteQ_GetTasksServer) error {
+func (*server) GetTasks(empty *emptypb.Empty, stream proto.LiteQ_GetTasksServer) error {
 	for {
-		taskType, err := stream.Recv()
+		/* Receive stream message
+		 taskType, err := stream.Recv()
 		log.Println("GetTasks:", taskType)
 		// error handling
 		{
@@ -24,7 +24,7 @@ func (*server) GetTasks(stream proto.LiteQ_GetTasksServer) error {
 				return err
 			}
 		}
-
+		*/
 		for _, t := range *queue.Q.Tasks {
 			stream.Send(&proto.Task{
 				Id:        t.ID,

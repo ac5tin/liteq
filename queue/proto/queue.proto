@@ -1,10 +1,9 @@
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 package liteq;
 option go_package = "./queue/proto";
-
-message TaskType { uint32 type = 1; }
 
 message Task {
   string id = 1;
@@ -20,5 +19,5 @@ message Task {
 }
 
 service LiteQ {
-  rpc GetTasks(stream TaskType) returns (stream Task) {}
+  rpc GetTasks(google.protobuf.Empty) returns (stream Task) {}
 }

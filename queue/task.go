@@ -11,6 +11,10 @@ const (
 	TaskStatusDone                         // process completed
 )
 
+func (s TaskStatus) Uint32() uint32 {
+	return uint32(s)
+}
+
 func (s TaskStatus) String() string {
 	switch s {
 	case TaskStatusCreated:

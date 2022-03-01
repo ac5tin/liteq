@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -22,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type LiteQClient interface {
-	GetTasks(ctx context.Context, opts ...grpc.CallOption) (LiteQ_GetTasksClient, error)
+	GetTasks(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (LiteQ_GetTasksClient, error)
 }
 
 type liteQClient struct {
@@ -33,27 +34,28 @@ func NewLiteQClient(cc grpc.ClientConnInterface) LiteQClient {
 	return &liteQClient{cc}
 }
 
-func (c *liteQClient) GetTasks(ctx context.Context, opts ...grpc.CallOption) (LiteQ_GetTasksClient, error) {
+func (c *liteQClient) GetTasks(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (LiteQ_GetTasksClient, error) {
 	stream, err := c.cc.NewStream(ctx, &LiteQ_ServiceDesc.Streams[0], "/liteq.LiteQ/GetTasks", opts...)
 	if err != nil {
 		return nil, err
 	}
 	x := &liteQGetTasksClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
 	return x, nil
 }
 
 type LiteQ_GetTasksClient interface {
-	Send(*TaskType) error
 	Recv() (*Task, error)
 	grpc.ClientStream
 }
 
 type liteQGetTasksClient struct {
 	grpc.ClientStream
-}
-
-func (x *liteQGetTasksClient) Send(m *TaskType) error {
-	return x.ClientStream.SendMsg(m)
 }
 
 func (x *liteQGetTasksClient) Recv() (*Task, error) {
@@ -68,7 +70,7 @@ func (x *liteQGetTasksClient) Recv() (*Task, error) {
 // All implementations must embed UnimplementedLiteQServer
 // for forward compatibility
 type LiteQServer interface {
-	GetTasks(LiteQ_GetTasksServer) error
+	GetTasks(*emptypb.Empty, LiteQ_GetTasksServer) error
 	mustEmbedUnimplementedLiteQServer()
 }
 
@@ -76,7 +78,7 @@ type LiteQServer interface {
 type UnimplementedLiteQServer struct {
 }
 
-func (UnimplementedLiteQServer) GetTasks(LiteQ_GetTasksServer) error {
+func (UnimplementedLiteQServer) GetTasks(*emptypb.Empty, LiteQ_GetTasksServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetTasks not implemented")
 }
 func (UnimplementedLiteQServer) mustEmbedUnimplementedLiteQServer() {}
@@ -93,12 +95,15 @@ func RegisterLiteQServer(s grpc.ServiceRegistrar, srv LiteQServer) {
 }
 
 func _LiteQ_GetTasks_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(LiteQServer).GetTasks(&liteQGetTasksServer{stream})
+	m := new(emptypb.Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(LiteQServer).GetTasks(m, &liteQGetTasksServer{stream})
 }
 
 type LiteQ_GetTasksServer interface {
 	Send(*Task) error
-	Recv() (*TaskType, error)
 	grpc.ServerStream
 }
 
@@ -108,14 +113,6 @@ type liteQGetTasksServer struct {
 
 func (x *liteQGetTasksServer) Send(m *Task) error {
 	return x.ServerStream.SendMsg(m)
-}
-
-func (x *liteQGetTasksServer) Recv() (*TaskType, error) {
-	m := new(TaskType)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
 }
 
 // LiteQ_ServiceDesc is the grpc.ServiceDesc for LiteQ service.
@@ -130,7 +127,6 @@ var LiteQ_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "GetTasks",
 			Handler:       _LiteQ_GetTasks_Handler,
 			ServerStreams: true,
-			ClientStreams: true,
 		},
 	},
 	Metadata: "queue/proto/queue.proto",
