@@ -16,6 +16,7 @@ message Task {
     failed = 2;
     done = 3;
   }
+  TaskStatus status = 4;
 }
 
 service LiteQ {
