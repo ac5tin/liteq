@@ -3,6 +3,7 @@ package server
 import (
 	"liteq/queue"
 	"liteq/queue/proto"
+	"log"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -26,14 +27,62 @@ func (*server) GetTasks(empty *emptypb.Empty, stream proto.LiteQ_GetTasksServer)
 	}
 	*/
 
+	// stream all existing tasks
 	for _, t := range *queue.Q.Tasks {
-		stream.Send(&proto.Task{
+		if err := stream.Send(&proto.Task{
 			Id:        t.ID,
 			Data:      t.Data,
 			CreatedAt: timestamppb.New(t.CreationDate),
 			Status:    *proto.Task_TaskStatus(t.Status).Enum(),
-		})
+		}); err != nil {
+			log.Println(err.Error())
+		}
 	}
 
+	// keep streaming on new tasks
+
+	go func() {
+		for {
+			t := <-queue.Q.TaskCh
+			if err := stream.Send(&proto.Task{
+				Id:        t.ID,
+				Data:      t.Data,
+				CreatedAt: timestamppb.New(t.CreationDate),
+				Status:    *proto.Task_TaskStatus(t.Status).Enum(),
+			}); err != nil {
+				log.Printf("(Failed to send new task through stream) Err: %s\n", err.Error())
+			}
+		}
+	}()
+
+	go func() {
+		<-stream.Context().Done()
+		log.Println("GetTasks: stream closed")
+		if err := stream.Context().Err(); err != nil {
+			log.Printf("GetTasks: %s\n", err.Error())
+		}
+	}()
+
 	return nil
+
+	/*
+		for {
+			select {
+			case <-stream.Context().Done():
+				if err := stream.Context().Err(); err != nil {
+					log.Printf("GetTasks: %s\n", err.Error())
+				}
+				return nil
+			case t := <-queue.Q.TaskCh:
+				if err := stream.Send(&proto.Task{
+					Id:        t.ID,
+					Data:      t.Data,
+					CreatedAt: timestamppb.New(t.CreationDate),
+					Status:    *proto.Task_TaskStatus(t.Status).Enum(),
+				}); err != nil {
+					log.Printf("(Failed to send new task through stream) Err: %s\n", err.Error())
+				}
+			}
+		}
+	*/
 }
