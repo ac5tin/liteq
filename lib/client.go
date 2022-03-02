@@ -20,3 +20,7 @@ func NewClient(address string) (*Client, error) {
 	client.conn = cc
 	return client, nil
 }
+
+func (c *Client) Close() error {
+	return c.conn.Close()
+}
