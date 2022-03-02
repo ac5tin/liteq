@@ -28,14 +28,16 @@ func (c *Client) GetTasks() (<-chan *queue.Task, error) {
 			t, err := stream.Recv()
 			// error handling
 			{
+
 				if err == io.EOF {
 					// EOF end of stream
-					// log.Println("EOF") // debug
+					//log.Println("EOF") // debug
 					close(ch)
 					return
 				}
+
 				if err != nil {
-					log.Printf("GetTasks Err: %v\n", err)
+					log.Printf("Failed to get tasks, Err: %v\n", err)
 					close(ch)
 					return
 				}
