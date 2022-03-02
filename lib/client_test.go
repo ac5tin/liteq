@@ -4,6 +4,7 @@ import (
 	"context"
 	"liteq/queue"
 	"liteq/server"
+	"log"
 	"testing"
 	"time"
 
@@ -27,6 +28,22 @@ func TestClient(t *testing.T) {
 			CreationDate: time.Now(),
 		},
 	}
+
+	values2 := []queue.Task{
+		{
+			ID:           "3",
+			Data:         []byte("test3"),
+			Status:       queue.TaskStatusCreated,
+			CreationDate: time.Now(),
+		},
+		{
+			ID:           "4",
+			Data:         []byte("test4"),
+			Status:       queue.TaskStatusCreated,
+			CreationDate: time.Now(),
+		},
+	}
+
 	queue.Q = queue.NewQueue()
 	for _, v := range values {
 		queue.Q.Add(v)
@@ -40,30 +57,69 @@ func TestClient(t *testing.T) {
 	}
 	defer conn.Close()
 	t.Log("server started")
-	// client
-	t.Log("initialising client")
-	c := new(Client)
-	c.conn = conn
-	t.Log("getting task")
-	ch, err := c.GetTasks()
-	if err != nil {
-		t.Errorf("Failed to execute client.GetTasks: %v", err)
-	}
 
-	// check tasks
-	tasks := make([]queue.Task, 0)
-	for {
-		task := <-ch
-		if task == nil {
-			break
+	t.Run("Stream Existing", func(t *testing.T) {
+		// stream existing task data
+		// client
+		t.Log("initialising client")
+		c := new(Client)
+		c.conn = conn
+		t.Log("getting task")
+		ch, err := c.GetTasks()
+		if err != nil {
+			t.Errorf("Failed to execute client.GetTasks: %v", err)
 		}
-		tasks = append(tasks, *task)
-	}
 
-	assert.Len(t, tasks, len(values))
+		// check tasks
+		tasks := make([]queue.Task, 0)
+		for {
+			task := <-ch
+			if task == nil {
+				break
+			}
+			tasks = append(tasks, *task)
+		}
+		log.Println("received tasks, asserting length")
 
-	if err := c.Close(); err != nil {
-		t.Errorf("Close: %v", err)
-	}
+		assert.Len(t, tasks, len(values))
+
+		//t.Log(values2)
+	})
+
+	t.Run("Stream new", func(t *testing.T) {
+		// stream existing task data
+		// client
+		t.Log("initialising client")
+		c := new(Client)
+		c.conn = conn
+		t.Log("getting new tasks")
+		ch, err := c.GetTasks()
+		if err != nil {
+			t.Errorf("Failed to execute client.GetTasks: %v", err)
+		}
+
+		// check tasks
+		tasks := make([]queue.Task, 0)
+		go func() {
+			for {
+				task := <-ch
+				if task == nil {
+					break
+				}
+				tasks = append(tasks, *task)
+			}
+		}()
+
+		// add new tasks
+		for _, v := range values2 {
+			queue.Q.Add(v)
+		}
+
+		time.Sleep(time.Second * 5)
+
+		t.Log("received tasks, asserting length")
+
+		assert.Len(t, tasks, len(values)+len(values2))
+	})
 
 }
