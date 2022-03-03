@@ -122,4 +122,35 @@ func TestClient(t *testing.T) {
 		assert.Len(t, tasks, len(values)+len(values2))
 	})
 
+	t.Run("Update task", func(t *testing.T) {
+		// stream existing task data
+		// client
+		t.Log("initialising client")
+		c := new(Client)
+		c.conn = conn
+		// update status
+		t.Log("updating task status")
+		if err := c.UpdateTask("1", queue.TaskStatusDone); err != nil {
+			t.Error(err.Error())
+		}
+
+		// ensure it's updated
+		found := false
+		for _, task := range *queue.Q.Tasks {
+			if task.ID == "1" {
+				found = true
+				t.Logf("Found Task with ID: %s\n", task.ID)
+				// check ID
+				if task.Status != queue.TaskStatusDone {
+					t.Errorf("Expected status = Done, got %s\n", task.Status.String())
+				}
+				break
+			}
+		}
+		if !found {
+			t.Error("Failed to find ID")
+		}
+
+	})
+
 }
