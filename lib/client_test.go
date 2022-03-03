@@ -46,7 +46,7 @@ func TestClient(t *testing.T) {
 
 	queue.Q = queue.NewQueue()
 	for _, v := range values {
-		queue.Q.Add(v)
+		queue.Q.Add(&v)
 	}
 	// start server
 	t.Log("starting server")
@@ -112,7 +112,7 @@ func TestClient(t *testing.T) {
 
 		// add new tasks
 		for _, v := range values2 {
-			queue.Q.Add(v)
+			queue.Q.Add(&v)
 		}
 
 		time.Sleep(time.Second * 5)
