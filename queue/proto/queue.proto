@@ -5,19 +5,27 @@ import "google/protobuf/timestamp.proto";
 package liteq;
 option go_package = "./queue/proto";
 
+enum TaskStatus {
+  created = 0;
+  processing = 1;
+  failed = 2;
+  done = 3;
+}
+
 message Task {
   string id = 1;
   bytes data = 2;
   google.protobuf.Timestamp created_at = 3;
-  enum TaskStatus {
-    created = 0;
-    processing = 1;
-    failed = 2;
-    done = 3;
-  }
   TaskStatus status = 4;
+}
+
+message TaskStatusUpdateRequest {
+  string id = 1;
+  TaskStatus status = 2;
 }
 
 service LiteQ {
   rpc GetTasks(google.protobuf.Empty) returns (stream Task) {}
+  rpc TaskStatusUpdate(TaskStatusUpdateRequest)
+      returns (google.protobuf.Empty) {}
 }

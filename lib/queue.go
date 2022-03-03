@@ -76,3 +76,17 @@ func (c *Client) GetTasks() (<-chan *queue.Task, error) {
 
 	return ch, nil
 }
+
+func (c *Client) UpdateTask(id string, status queue.TaskStatus) error {
+	client := proto.NewLiteQClient(c.conn)
+	// prepare request
+	request := new(proto.TaskStatusUpdateRequest)
+	request.Id = id
+	request.Status = proto.TaskStatus(status)
+	// send request
+	if _, err := client.TaskStatusUpdate(context.Background(), request); err != nil {
+		return err
+	}
+
+	return nil
+}

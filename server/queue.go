@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"liteq/queue"
 	"liteq/queue/proto"
 	"log"
@@ -33,7 +34,7 @@ func (*server) GetTasks(empty *emptypb.Empty, stream proto.LiteQ_GetTasksServer)
 			Id:        t.ID,
 			Data:      t.Data,
 			CreatedAt: timestamppb.New(t.CreationDate),
-			Status:    *proto.Task_TaskStatus(t.Status).Enum(),
+			Status:    *proto.TaskStatus(t.Status).Enum(),
 		}); err != nil {
 			log.Println(err.Error())
 		}
@@ -48,7 +49,7 @@ func (*server) GetTasks(empty *emptypb.Empty, stream proto.LiteQ_GetTasksServer)
 				Id:        t.ID,
 				Data:      t.Data,
 				CreatedAt: timestamppb.New(t.CreationDate),
-				Status:    *proto.Task_TaskStatus(t.Status).Enum(),
+				Status:    *proto.TaskStatus(t.Status).Enum(),
 			}); err != nil {
 				log.Printf("(Failed to send new task through stream) Err: %s\n", err.Error())
 			}
@@ -85,4 +86,15 @@ func (*server) GetTasks(empty *emptypb.Empty, stream proto.LiteQ_GetTasksServer)
 			}
 		}
 	*/
+}
+
+func (*server) TaskStatusUpdate(ctx context.Context, req *proto.TaskStatusUpdateRequest) (*emptypb.Empty, error) {
+	// get task from id
+	for _, q := range *queue.Q.Tasks {
+		if q.ID == req.Id {
+			q.Status = queue.TaskStatus(req.Status)
+			break
+		}
+	}
+	return new(emptypb.Empty), nil
 }
