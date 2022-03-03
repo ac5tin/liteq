@@ -9,3 +9,6 @@ run:
 
 clean:
 	rm -rf ./bin
+
+protoc:
+	protoc --go_out=. --go-grpc_out=. ./queue/proto/queue.proto
