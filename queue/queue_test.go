@@ -39,19 +39,30 @@ func TestQueue(t *testing.T) {
 	}
 
 	Q = NewQueue()
-	for _, v := range values {
-		value := v
-		Q.Add(&value)
-	}
 
-	// assert length
-	assert.Equal(t, len(values), len(*Q.Tasks))
+	t.Run("Adding new tasks", func(t *testing.T) {
+		for _, v := range values {
+			value := v
+			Q.Add(&value)
+		}
 
-	for _, v := range values2 {
-		value := v
-		Q.Add(&value)
-	}
+		// assert length
+		assert.Equal(t, len(values), len(*Q.Tasks))
 
-	// assert length
-	assert.Equal(t, len(values)+len(values2), len(*Q.Tasks))
+		for _, v := range values2 {
+			value := v
+			Q.Add(&value)
+		}
+
+		// assert length
+		assert.Equal(t, len(values)+len(values2), len(*Q.Tasks))
+	})
+
+	t.Run("Get all tasks", func(t *testing.T) {
+		tasks := Q.GetCurrentAllTasks()
+		// assert length
+		assert.Equal(t, len(values)+len(values2), len(*tasks))
+		assert.Equal(t, len(*Q.Tasks), len(*tasks))
+	})
+
 }
