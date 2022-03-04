@@ -31,13 +31,13 @@ func (c *Client) GetTasks(status queue.TaskStatus) (<-chan *queue.Task, error) {
 
 				if err == io.EOF {
 					// EOF end of stream
-					//log.Println("EOF") // debug
+					// log.Println("[client] EOF") // debug
 					close(ch)
 					return
 				}
 
 				if err != nil {
-					log.Printf("Failed to get tasks, Err: %v\n", err)
+					log.Printf("[client] Failed to get tasks, Err: %v\n", err) // debug
 					close(ch)
 					return
 				}
@@ -45,7 +45,7 @@ func (c *Client) GetTasks(status queue.TaskStatus) (<-chan *queue.Task, error) {
 			// handle nil
 			{
 				if t == nil {
-					log.Println("GetTasks: nil")
+					// log.Println("[client] GetTasks: nil") // debug
 					continue
 				}
 			}
@@ -65,10 +65,11 @@ func (c *Client) GetTasks(status queue.TaskStatus) (<-chan *queue.Task, error) {
 	go func() {
 		<-ctx.Done()
 		if err := ctx.Err(); err != nil {
-			log.Println(err.Error())
+			log.Printf("[client] %s\n", err.Error()) // debug
 		}
 		// close if not already closed
 		if _, ok := <-ch; ok {
+			//log.Println("[client] ctx end, closing channel") // debug
 			close(ch)
 		}
 
