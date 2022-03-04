@@ -177,6 +177,17 @@ func TestClient(t *testing.T) {
 		assert.Equal(t, len(values)+len(values2)+len(values3), len(tasks))
 	})
 
+	// Update task again
+	// =============================================
+	t.Run("Update task 4", func(t *testing.T) {
+		if err := c.UpdateTask("4", queue.TaskStatusDone); err != nil {
+			t.Error(err.Error())
+		}
+		time.Sleep(time.Second * 2)
+		assert.NotNil(t, updatedTask)
+		assert.Equal(t, "4", updatedTask.ID)
+	})
+
 	// connection
 	// =============================================
 	t.Run("GRPC Connection", func(t *testing.T) {
