@@ -6,25 +6,34 @@ var (
 
 type Queue struct {
 	Tasks  *[]*Task
-	TaskCh chan *Task
+	TaskCh map[TaskStatus]chan *Task // each TaskStatus has it's own individual Task channel
 }
 
 func NewQueue() *Queue {
-	ch := make(chan *Task)
-	go func() {
-		for {
-			<-ch
-		}
-	}()
+	chMap := make(map[TaskStatus]chan *Task) // channel map
+	// populate channel map
+	for _, status := range TaskStatuses {
+		// create channel
+		ch := make(chan *Task)
+		go func() {
+			for {
+				<-ch
+			}
+		}()
+
+		// register channel to map
+		chMap[status] = ch
+	}
+
 	return &Queue{
 		Tasks:  new([]*Task),
-		TaskCh: ch,
+		TaskCh: chMap,
 	}
 }
 
 func (q *Queue) Add(t *Task) {
 	*q.Tasks = append(*q.Tasks, t)
-	q.TaskCh <- t
+	q.TaskCh[TaskStatusCreated] <- t
 }
 
 func (q *Queue) GetCurrentAllTasks() *[]Task {

@@ -11,6 +11,15 @@ const (
 	TaskStatusDone                         // process completed
 )
 
+var (
+	TaskStatuses []TaskStatus = []TaskStatus{
+		TaskStatusCreated,
+		TaskStatusProcessing,
+		TaskStatusFailed,
+		TaskStatusDone,
+	}
+)
+
 func (s TaskStatus) Uint32() uint32 {
 	return uint32(s)
 }

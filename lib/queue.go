@@ -6,16 +6,16 @@ import (
 	"liteq/queue"
 	"liteq/queue/proto"
 	"log"
-
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func (c *Client) GetTasks() (<-chan *queue.Task, error) {
+func (c *Client) GetTasks(status queue.TaskStatus) (<-chan *queue.Task, error) {
 
 	client := proto.NewLiteQClient(c.conn)
 
 	// stream tasks
-	stream, err := client.GetTasks(context.Background(), new(emptypb.Empty))
+	req := new(proto.GetTaskRequest)
+	req.Status = proto.TaskStatus(status)
+	stream, err := client.GetTasks(context.Background(), req)
 	if err != nil {
 		return nil, err
 	}

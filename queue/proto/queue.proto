@@ -12,6 +12,8 @@ enum TaskStatus {
   done = 3;
 }
 
+message GetTaskRequest { TaskStatus status = 1; }
+
 message Task {
   string id = 1;
   bytes data = 2;
@@ -25,7 +27,7 @@ message TaskStatusUpdateRequest {
 }
 
 service LiteQ {
-  rpc GetTasks(google.protobuf.Empty) returns (stream Task) {}
+  rpc GetTasks(GetTaskRequest) returns (stream Task) {}
   rpc TaskStatusUpdate(TaskStatusUpdateRequest)
       returns (google.protobuf.Empty) {}
 }

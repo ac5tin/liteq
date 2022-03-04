@@ -23,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type LiteQClient interface {
-	GetTasks(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (LiteQ_GetTasksClient, error)
+	GetTasks(ctx context.Context, in *GetTaskRequest, opts ...grpc.CallOption) (LiteQ_GetTasksClient, error)
 	TaskStatusUpdate(ctx context.Context, in *TaskStatusUpdateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -35,7 +35,7 @@ func NewLiteQClient(cc grpc.ClientConnInterface) LiteQClient {
 	return &liteQClient{cc}
 }
 
-func (c *liteQClient) GetTasks(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (LiteQ_GetTasksClient, error) {
+func (c *liteQClient) GetTasks(ctx context.Context, in *GetTaskRequest, opts ...grpc.CallOption) (LiteQ_GetTasksClient, error) {
 	stream, err := c.cc.NewStream(ctx, &LiteQ_ServiceDesc.Streams[0], "/liteq.LiteQ/GetTasks", opts...)
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func (c *liteQClient) TaskStatusUpdate(ctx context.Context, in *TaskStatusUpdate
 // All implementations must embed UnimplementedLiteQServer
 // for forward compatibility
 type LiteQServer interface {
-	GetTasks(*emptypb.Empty, LiteQ_GetTasksServer) error
+	GetTasks(*GetTaskRequest, LiteQ_GetTasksServer) error
 	TaskStatusUpdate(context.Context, *TaskStatusUpdateRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedLiteQServer()
 }
@@ -89,7 +89,7 @@ type LiteQServer interface {
 type UnimplementedLiteQServer struct {
 }
 
-func (UnimplementedLiteQServer) GetTasks(*emptypb.Empty, LiteQ_GetTasksServer) error {
+func (UnimplementedLiteQServer) GetTasks(*GetTaskRequest, LiteQ_GetTasksServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetTasks not implemented")
 }
 func (UnimplementedLiteQServer) TaskStatusUpdate(context.Context, *TaskStatusUpdateRequest) (*emptypb.Empty, error) {
@@ -109,7 +109,7 @@ func RegisterLiteQServer(s grpc.ServiceRegistrar, srv LiteQServer) {
 }
 
 func _LiteQ_GetTasks_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(emptypb.Empty)
+	m := new(GetTaskRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}

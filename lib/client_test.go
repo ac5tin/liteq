@@ -66,7 +66,7 @@ func TestClient(t *testing.T) {
 		c := new(Client)
 		c.conn = conn
 		t.Log("getting task")
-		ch, err := c.GetTasks()
+		ch, err := c.GetTasks(queue.TaskStatusCreated)
 		if err != nil {
 			t.Errorf("Failed to execute client.GetTasks: %v", err)
 		}
@@ -94,7 +94,7 @@ func TestClient(t *testing.T) {
 		c := new(Client)
 		c.conn = conn
 		t.Log("getting new tasks")
-		ch, err := c.GetTasks()
+		ch, err := c.GetTasks(queue.TaskStatusCreated)
 		if err != nil {
 			t.Errorf("Failed to execute client.GetTasks: %v", err)
 		}

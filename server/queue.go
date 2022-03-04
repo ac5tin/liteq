@@ -11,7 +11,7 @@ import (
 )
 
 // QueueService
-func (*server) GetTasks(empty *emptypb.Empty, stream proto.LiteQ_GetTasksServer) error {
+func (*server) GetTasks(req *proto.GetTaskRequest, stream proto.LiteQ_GetTasksServer) error {
 
 	/* Receive stream message
 	 taskType, err := stream.Recv()
@@ -28,23 +28,28 @@ func (*server) GetTasks(empty *emptypb.Empty, stream proto.LiteQ_GetTasksServer)
 	}
 	*/
 
+	reqTaskStatus := queue.TaskStatus(req.Status)
+
 	// stream all existing tasks
 	for _, t := range *queue.Q.Tasks {
-		if err := stream.Send(&proto.Task{
-			Id:        t.ID,
-			Data:      t.Data,
-			CreatedAt: timestamppb.New(t.CreationDate),
-			Status:    *proto.TaskStatus(t.Status).Enum(),
-		}); err != nil {
-			log.Println(err.Error())
+		if t.Status == reqTaskStatus {
+			if err := stream.Send(&proto.Task{
+				Id:        t.ID,
+				Data:      t.Data,
+				CreatedAt: timestamppb.New(t.CreationDate),
+				Status:    *proto.TaskStatus(t.Status).Enum(),
+			}); err != nil {
+				log.Println(err.Error())
+			}
 		}
+
 	}
 
 	// keep streaming on new tasks
 
 	go func() {
 		for {
-			t := <-queue.Q.TaskCh
+			t := <-queue.Q.TaskCh[reqTaskStatus]
 			if err := stream.Send(&proto.Task{
 				Id:        t.ID,
 				Data:      t.Data,
