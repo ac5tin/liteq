@@ -33,13 +33,15 @@ func (*server) GetTasks(req *proto.GetTaskRequest, stream proto.LiteQ_GetTasksSe
 	// stream all existing tasks
 	for _, t := range *queue.Q.Tasks {
 		if t.Status == reqTaskStatus {
+			// log.Printf("[server] streaming existing task %s to [%s]\n", t.ID, reqTaskStatus) // debug
 			if err := stream.Send(&proto.Task{
 				Id:        t.ID,
 				Data:      t.Data,
 				CreatedAt: timestamppb.New(t.CreationDate),
 				Status:    *proto.TaskStatus(t.Status).Enum(),
 			}); err != nil {
-				log.Println(err.Error())
+				log.Printf("[server] Failed to stream task, %s\n", err.Error())
+				return err
 			}
 		}
 
@@ -47,59 +49,42 @@ func (*server) GetTasks(req *proto.GetTaskRequest, stream proto.LiteQ_GetTasksSe
 
 	// keep streaming on new tasks
 
-	go func() {
-		for {
-			t := <-queue.Q.TaskCh[reqTaskStatus]
+	qc := queue.Q.RegisterStatusChan(reqTaskStatus)
+	ch := *qc.Chan
+	defer queue.Q.UnregisterStatusChan(qc)
+taskChanLoop:
+	for {
+		select {
+		case <-stream.Context().Done():
+			// log.Println("[server] GetTasks: stream closed") // debug
+			if err := stream.Context().Err(); err != nil {
+				log.Printf("[server] GetTasks: %s\n", err.Error())
+				return err
+			}
+			break taskChanLoop
+
+		case t := <-ch:
+			// log.Printf("[server] streaming (updated/new) task %s to [%s]\n", t.ID, reqTaskStatus) // debug
 			if err := stream.Send(&proto.Task{
 				Id:        t.ID,
 				Data:      t.Data,
 				CreatedAt: timestamppb.New(t.CreationDate),
 				Status:    *proto.TaskStatus(t.Status).Enum(),
 			}); err != nil {
-				log.Printf("(Failed to send new task through stream) Err: %s\n", err.Error())
+				log.Printf("[server] (Failed to send new task through stream) Err: %s\n", err.Error())
+				return err
 			}
 		}
-	}()
 
-	go func() {
-		<-stream.Context().Done()
-		log.Println("GetTasks: stream closed")
-		if err := stream.Context().Err(); err != nil {
-			log.Printf("GetTasks: %s\n", err.Error())
-		}
-	}()
-
+	}
 	return nil
-
-	/*
-		for {
-			select {
-			case <-stream.Context().Done():
-				if err := stream.Context().Err(); err != nil {
-					log.Printf("GetTasks: %s\n", err.Error())
-				}
-				return nil
-			case t := <-queue.Q.TaskCh:
-				if err := stream.Send(&proto.Task{
-					Id:        t.ID,
-					Data:      t.Data,
-					CreatedAt: timestamppb.New(t.CreationDate),
-					Status:    *proto.Task_TaskStatus(t.Status).Enum(),
-				}); err != nil {
-					log.Printf("(Failed to send new task through stream) Err: %s\n", err.Error())
-				}
-			}
-		}
-	*/
 }
 
 func (*server) TaskStatusUpdate(ctx context.Context, req *proto.TaskStatusUpdateRequest) (*emptypb.Empty, error) {
 	// get task from id
-	for _, q := range *queue.Q.Tasks {
-		if q.ID == req.Id {
-			q.Status = queue.TaskStatus(req.Status)
-			break
-		}
+	if err := queue.Q.UpdateTask(req.Id, queue.TaskStatus(req.Status)); err != nil {
+		log.Printf("[server] %s\n", err.Error())
+		return new(emptypb.Empty), err
 	}
 	return new(emptypb.Empty), nil
 }
