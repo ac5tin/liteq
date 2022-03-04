@@ -4,7 +4,6 @@ import (
 	"context"
 	"liteq/queue"
 	"liteq/server"
-	"log"
 	"testing"
 	"time"
 
@@ -42,6 +41,39 @@ func TestClient(t *testing.T) {
 			Status:       queue.TaskStatusCreated,
 			CreationDate: time.Now(),
 		},
+		{
+			ID:           "5",
+			Data:         []byte("test5"),
+			Status:       queue.TaskStatusCreated,
+			CreationDate: time.Now(),
+		},
+		{
+			ID:           "6",
+			Data:         []byte("test6"),
+			Status:       queue.TaskStatusCreated,
+			CreationDate: time.Now(),
+		},
+	}
+
+	values3 := []queue.Task{
+		{
+			ID:           "7",
+			Data:         []byte("test7"),
+			Status:       queue.TaskStatusCreated,
+			CreationDate: time.Now(),
+		},
+		{
+			ID:           "8",
+			Data:         []byte("test8"),
+			Status:       queue.TaskStatusCreated,
+			CreationDate: time.Now(),
+		},
+		{
+			ID:           "9",
+			Data:         []byte("test9"),
+			Status:       queue.TaskStatusCreated,
+			CreationDate: time.Now(),
+		},
 	}
 
 	queue.Q = queue.NewQueue()
@@ -59,100 +91,81 @@ func TestClient(t *testing.T) {
 	defer conn.Close()
 	t.Log("server started")
 
-	t.Run("Stream Existing", func(t *testing.T) {
-		// stream existing task data
-		// client
-		t.Log("initialising client")
-		c := new(Client)
-		c.conn = conn
-		t.Log("getting task")
-		ch, err := c.GetTasks(queue.TaskStatusCreated)
-		if err != nil {
-			t.Errorf("Failed to execute client.GetTasks: %v", err)
-		}
+	// client
+	t.Log("initialising client")
+	c := new(Client)
+	defer c.Close()
+	c.conn = conn
+	t.Log("getting task")
+	ch, err := c.GetTasks(queue.TaskStatusCreated)
+	if err != nil {
+		t.Errorf("Failed to execute client.GetTasks: %v", err)
+	}
 
-		// check tasks
-		tasks := make([]queue.Task, 0)
+	tasks := make([]queue.Task, 0)
+	go func() {
 		for {
 			task := <-ch
 			if task == nil {
 				break
 			}
 			tasks = append(tasks, *task)
+			t.Logf("Received (new) task %s\n", task.ID)
 		}
-		log.Println("received tasks, asserting length")
+	}()
 
-		assert.Len(t, tasks, len(values))
+	time.Sleep(time.Second * 5)
+	assert.Equal(t, len(values), len(tasks))
 
-		//t.Log(values2)
-	})
+	for _, v := range values2 {
+		value := v
+		queue.Q.Add(&value)
+	}
 
-	t.Run("Stream new", func(t *testing.T) {
-		// stream existing task data
-		// client
-		t.Log("initialising client")
-		c := new(Client)
-		c.conn = conn
-		t.Log("getting new tasks")
-		ch, err := c.GetTasks(queue.TaskStatusCreated)
-		if err != nil {
-			t.Errorf("Failed to execute client.GetTasks: %v", err)
-		}
+	time.Sleep(time.Second * 5)
+	assert.Equal(t, len(values)+len(values2), len(tasks))
+	assert.Equal(t, len(*queue.Q.Tasks), len(tasks))
 
-		// check tasks
-		tasks := make([]queue.Task, 0)
-		go func() {
-			for {
-				task := <-ch
-				if task == nil {
-					break
-				}
-				tasks = append(tasks, *task)
-			}
-		}()
+	// update
+	ch, err = c.GetTasks(queue.TaskStatusDone)
+	if err != nil {
+		t.Error(err.Error())
+	}
 
-		// add new tasks
-		for _, v := range values2 {
-			value := v
-			queue.Q.Add(&value)
-		}
-
-		time.Sleep(time.Second * 5)
-
-		t.Log("received tasks, asserting length")
-
-		assert.Len(t, tasks, len(values)+len(values2))
-	})
-
-	t.Run("Update task", func(t *testing.T) {
-		// stream existing task data
-		// client
-		t.Log("initialising client")
-		c := new(Client)
-		c.conn = conn
-		// update status
-		t.Log("updating task status")
-		if err := c.UpdateTask("1", queue.TaskStatusDone); err != nil {
-			t.Error(err.Error())
-		}
-
-		// ensure it's updated
-		found := false
-		for _, task := range *queue.Q.Tasks {
-			if task.ID == "1" {
-				found = true
-				t.Logf("Found Task with ID: %s\n", task.ID)
-				// check ID
-				if task.Status != queue.TaskStatusDone {
-					t.Errorf("Expected status = Done, got %s\n", task.Status.String())
-				}
+	updatedTask := new(queue.Task)
+	go func() {
+		for {
+			task := <-ch
+			if task == nil {
 				break
 			}
+			updatedTask = task
+			t.Logf("Received (done) task %s\n", task.ID)
 		}
-		if !found {
-			t.Error("Failed to find ID")
-		}
+	}()
 
-	})
+	time.Sleep(time.Second * 2)
 
+	if err := c.UpdateTask("3", queue.TaskStatusDone); err != nil {
+		t.Error(err.Error())
+	}
+	if err := c.UpdateTask("2", queue.TaskStatusDone); err != nil {
+		t.Error(err.Error())
+	}
+	time.Sleep(time.Second * 2)
+
+	assert.NotNil(t, updatedTask)
+
+	assert.Equal(t, "2", updatedTask.ID)
+
+	// adding stuff again
+	for _, v := range values3 {
+		value := v
+		queue.Q.Add(&value)
+	}
+	time.Sleep(time.Second * 5)
+	assert.Equal(t, len(values)+len(values2)+len(values3), len(tasks))
+
+	// connection
+	assert.Equal(t, "READY", c.conn.GetState().String())
 }
