@@ -116,18 +116,19 @@ func TestClient(t *testing.T) {
 
 	time.Sleep(time.Second * 5)
 
+	// =============================================
 	t.Run("Adding values to Q", func(t *testing.T) {
 		assert.Equal(t, len(values), len(tasks))
 	})
 
-	for _, v := range values2 {
-		value := v
-		queue.Q.Add(&value)
-	}
-
-	time.Sleep(time.Second * 5)
-
+	// =============================================
 	t.Run("Adding values2 to Q", func(t *testing.T) {
+		for _, v := range values2 {
+			value := v
+			queue.Q.Add(&value)
+		}
+
+		time.Sleep(time.Second * 5)
 		assert.Equal(t, len(values)+len(values2), len(tasks))
 		assert.Equal(t, len(*queue.Q.Tasks), len(tasks))
 	})
@@ -152,31 +153,32 @@ func TestClient(t *testing.T) {
 
 	time.Sleep(time.Second * 2)
 
-	if err := c.UpdateTask("3", queue.TaskStatusDone); err != nil {
-		t.Error(err.Error())
-	}
-	if err := c.UpdateTask("2", queue.TaskStatusDone); err != nil {
-		t.Error(err.Error())
-	}
-	time.Sleep(time.Second * 2)
-
+	// =============================================
 	t.Run("Update task", func(t *testing.T) {
+		if err := c.UpdateTask("3", queue.TaskStatusDone); err != nil {
+			t.Error(err.Error())
+		}
+		if err := c.UpdateTask("2", queue.TaskStatusDone); err != nil {
+			t.Error(err.Error())
+		}
+		time.Sleep(time.Second * 2)
 		assert.NotNil(t, updatedTask)
 		assert.Equal(t, "2", updatedTask.ID)
 	})
 
 	// adding stuff again
-	for _, v := range values3 {
-		value := v
-		queue.Q.Add(&value)
-	}
-	time.Sleep(time.Second * 5)
-
+	// =============================================
 	t.Run("Adding values3 to Q", func(t *testing.T) {
+		for _, v := range values3 {
+			value := v
+			queue.Q.Add(&value)
+		}
+		time.Sleep(time.Second * 5)
 		assert.Equal(t, len(values)+len(values2)+len(values3), len(tasks))
 	})
 
 	// connection
+	// =============================================
 	t.Run("GRPC Connection", func(t *testing.T) {
 		assert.Equal(t, "READY", c.conn.GetState().String())
 	})
