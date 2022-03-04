@@ -76,6 +76,27 @@ func TestClient(t *testing.T) {
 		},
 	}
 
+	values4 := []queue.Task{
+		{
+			ID:           "10",
+			Data:         []byte("test10"),
+			Status:       queue.TaskStatusCreated,
+			CreationDate: time.Now(),
+		},
+		{
+			ID:           "11",
+			Data:         []byte("test11"),
+			Status:       queue.TaskStatusCreated,
+			CreationDate: time.Now(),
+		},
+		{
+			ID:           "12",
+			Data:         []byte("test12"),
+			Status:       queue.TaskStatusCreated,
+			CreationDate: time.Now(),
+		},
+	}
+
 	queue.Q = queue.NewQueue()
 	for _, v := range values {
 		value := v
@@ -134,7 +155,7 @@ func TestClient(t *testing.T) {
 	})
 
 	// update
-	ch, err = c.GetTasks(queue.TaskStatusDone)
+	ch2, err := c.GetTasks(queue.TaskStatusDone)
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -142,7 +163,7 @@ func TestClient(t *testing.T) {
 	updatedTask := new(queue.Task)
 	go func() {
 		for {
-			task := <-ch
+			task := <-ch2
 			if task == nil {
 				break
 			}
@@ -155,7 +176,28 @@ func TestClient(t *testing.T) {
 
 	// =============================================
 	t.Run("Update task", func(t *testing.T) {
+		if err := c.UpdateTask("1", queue.TaskStatusDone); err != nil {
+			t.Error(err.Error())
+		}
+		if err := c.UpdateTask("2", queue.TaskStatusDone); err != nil {
+			t.Error(err.Error())
+		}
 		if err := c.UpdateTask("3", queue.TaskStatusDone); err != nil {
+			t.Error(err.Error())
+		}
+		if err := c.UpdateTask("4", queue.TaskStatusDone); err != nil {
+			t.Error(err.Error())
+		}
+		if err := c.UpdateTask("5", queue.TaskStatusDone); err != nil {
+			t.Error(err.Error())
+		}
+		if err := c.UpdateTask("6", queue.TaskStatusDone); err != nil {
+			t.Error(err.Error())
+		}
+		if err := c.UpdateTask("5", queue.TaskStatusDone); err != nil {
+			t.Error(err.Error())
+		}
+		if err := c.UpdateTask("1", queue.TaskStatusDone); err != nil {
 			t.Error(err.Error())
 		}
 		if err := c.UpdateTask("2", queue.TaskStatusDone); err != nil {
@@ -179,13 +221,36 @@ func TestClient(t *testing.T) {
 
 	// Update task again
 	// =============================================
-	t.Run("Update task 4", func(t *testing.T) {
+	t.Run("Update tasks again", func(t *testing.T) {
+		if err := c.UpdateTask("6", queue.TaskStatusDone); err != nil {
+			t.Error(err.Error())
+		}
+		if err := c.UpdateTask("5", queue.TaskStatusDone); err != nil {
+			t.Error(err.Error())
+		}
+		if err := c.UpdateTask("1", queue.TaskStatusDone); err != nil {
+			t.Error(err.Error())
+		}
+		if err := c.UpdateTask("3", queue.TaskStatusDone); err != nil {
+			t.Error(err.Error())
+		}
 		if err := c.UpdateTask("4", queue.TaskStatusDone); err != nil {
 			t.Error(err.Error())
 		}
 		time.Sleep(time.Second * 2)
 		assert.NotNil(t, updatedTask)
 		assert.Equal(t, "4", updatedTask.ID)
+	})
+
+	// adding stuff again
+	// =============================================
+	t.Run("Adding values4 to Q", func(t *testing.T) {
+		for _, v := range values4 {
+			value := v
+			queue.Q.Add(&value)
+		}
+		time.Sleep(time.Second * 5)
+		assert.Equal(t, len(values)+len(values2)+len(values3)+len(values4), len(tasks))
 	})
 
 	// connection
