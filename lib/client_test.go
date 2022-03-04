@@ -115,7 +115,10 @@ func TestClient(t *testing.T) {
 	}()
 
 	time.Sleep(time.Second * 5)
-	assert.Equal(t, len(values), len(tasks))
+
+	t.Run("Adding values to Q", func(t *testing.T) {
+		assert.Equal(t, len(values), len(tasks))
+	})
 
 	for _, v := range values2 {
 		value := v
@@ -123,8 +126,11 @@ func TestClient(t *testing.T) {
 	}
 
 	time.Sleep(time.Second * 5)
-	assert.Equal(t, len(values)+len(values2), len(tasks))
-	assert.Equal(t, len(*queue.Q.Tasks), len(tasks))
+
+	t.Run("Adding values2 to Q", func(t *testing.T) {
+		assert.Equal(t, len(values)+len(values2), len(tasks))
+		assert.Equal(t, len(*queue.Q.Tasks), len(tasks))
+	})
 
 	// update
 	ch, err = c.GetTasks(queue.TaskStatusDone)
@@ -154,9 +160,10 @@ func TestClient(t *testing.T) {
 	}
 	time.Sleep(time.Second * 2)
 
-	assert.NotNil(t, updatedTask)
-
-	assert.Equal(t, "2", updatedTask.ID)
+	t.Run("Update task", func(t *testing.T) {
+		assert.NotNil(t, updatedTask)
+		assert.Equal(t, "2", updatedTask.ID)
+	})
 
 	// adding stuff again
 	for _, v := range values3 {
@@ -164,8 +171,14 @@ func TestClient(t *testing.T) {
 		queue.Q.Add(&value)
 	}
 	time.Sleep(time.Second * 5)
-	assert.Equal(t, len(values)+len(values2)+len(values3), len(tasks))
+
+	t.Run("Adding values3 to Q", func(t *testing.T) {
+		assert.Equal(t, len(values)+len(values2)+len(values3), len(tasks))
+	})
 
 	// connection
-	assert.Equal(t, "READY", c.conn.GetState().String())
+	t.Run("GRPC Connection", func(t *testing.T) {
+		assert.Equal(t, "READY", c.conn.GetState().String())
+	})
+
 }
