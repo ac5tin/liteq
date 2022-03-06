@@ -30,4 +30,5 @@ service LiteQ {
   rpc GetTasks(GetTaskRequest) returns (stream Task) {}
   rpc TaskStatusUpdate(TaskStatusUpdateRequest)
       returns (google.protobuf.Empty) {}
+  rpc AddTask(Task) returns (google.protobuf.Empty) {}
 }

@@ -88,3 +88,13 @@ func (*server) TaskStatusUpdate(ctx context.Context, req *proto.TaskStatusUpdate
 	}
 	return new(emptypb.Empty), nil
 }
+
+func (*server) AddTask(ctx context.Context, in *proto.Task) (*emptypb.Empty, error) {
+	t := new(queue.Task)
+	t.ID = in.Id
+	t.Data = in.Data
+	t.CreationDate = in.CreatedAt.AsTime()
+	t.Status = queue.TaskStatus(in.Status)
+	queue.Q.Add(t)
+	return new(emptypb.Empty), nil
+}

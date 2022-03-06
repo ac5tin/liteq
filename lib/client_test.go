@@ -146,7 +146,10 @@ func TestClient(t *testing.T) {
 	t.Run("Adding values2 to Q", func(t *testing.T) {
 		for _, v := range values2 {
 			value := v
-			queue.Q.Add(&value)
+			if err := c.AddTask(&value); err != nil {
+				t.Log(err.Error())
+			}
+			//queue.Q.Add(&value)
 		}
 
 		time.Sleep(time.Second * 5)

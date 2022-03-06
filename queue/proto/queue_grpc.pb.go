@@ -25,6 +25,7 @@ const _ = grpc.SupportPackageIsVersion7
 type LiteQClient interface {
 	GetTasks(ctx context.Context, in *GetTaskRequest, opts ...grpc.CallOption) (LiteQ_GetTasksClient, error)
 	TaskStatusUpdate(ctx context.Context, in *TaskStatusUpdateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	AddTask(ctx context.Context, in *Task, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type liteQClient struct {
@@ -76,12 +77,22 @@ func (c *liteQClient) TaskStatusUpdate(ctx context.Context, in *TaskStatusUpdate
 	return out, nil
 }
 
+func (c *liteQClient) AddTask(ctx context.Context, in *Task, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/liteq.LiteQ/AddTask", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LiteQServer is the server API for LiteQ service.
 // All implementations must embed UnimplementedLiteQServer
 // for forward compatibility
 type LiteQServer interface {
 	GetTasks(*GetTaskRequest, LiteQ_GetTasksServer) error
 	TaskStatusUpdate(context.Context, *TaskStatusUpdateRequest) (*emptypb.Empty, error)
+	AddTask(context.Context, *Task) (*emptypb.Empty, error)
 	mustEmbedUnimplementedLiteQServer()
 }
 
@@ -94,6 +105,9 @@ func (UnimplementedLiteQServer) GetTasks(*GetTaskRequest, LiteQ_GetTasksServer) 
 }
 func (UnimplementedLiteQServer) TaskStatusUpdate(context.Context, *TaskStatusUpdateRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TaskStatusUpdate not implemented")
+}
+func (UnimplementedLiteQServer) AddTask(context.Context, *Task) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddTask not implemented")
 }
 func (UnimplementedLiteQServer) mustEmbedUnimplementedLiteQServer() {}
 
@@ -147,6 +161,24 @@ func _LiteQ_TaskStatusUpdate_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LiteQ_AddTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Task)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LiteQServer).AddTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/liteq.LiteQ/AddTask",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LiteQServer).AddTask(ctx, req.(*Task))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LiteQ_ServiceDesc is the grpc.ServiceDesc for LiteQ service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -157,6 +189,10 @@ var LiteQ_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "TaskStatusUpdate",
 			Handler:    _LiteQ_TaskStatusUpdate_Handler,
+		},
+		{
+			MethodName: "AddTask",
+			Handler:    _LiteQ_AddTask_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

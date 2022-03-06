@@ -6,6 +6,8 @@ import (
 	"liteq/queue"
 	"liteq/queue/proto"
 	"log"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (c *Client) GetTasks(status queue.TaskStatus) (<-chan *queue.Task, error) {
@@ -89,5 +91,20 @@ func (c *Client) UpdateTask(id string, status queue.TaskStatus) error {
 		return err
 	}
 
+	return nil
+}
+
+func (c *Client) AddTask(t *queue.Task) error {
+	client := proto.NewLiteQClient(c.conn)
+	// prepare request
+	request := new(proto.Task)
+	request.Id = t.ID
+	request.Data = t.Data
+	request.CreatedAt = timestamppb.New(t.CreationDate)
+	request.Status = proto.TaskStatus(t.Status)
+	// send request
+	if _, err := client.AddTask(context.Background(), request); err != nil {
+		return err
+	}
 	return nil
 }
