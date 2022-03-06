@@ -7,6 +7,9 @@ build:
 run:
 	go run main.go
 
+run-example:
+	go run example/main.go
+
 clean:
 	rm -rf ./bin
 
