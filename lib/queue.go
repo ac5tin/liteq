@@ -6,8 +6,6 @@ import (
 	"liteq/queue"
 	"liteq/queue/proto"
 	"log"
-
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (c *Client) GetTasks(status queue.TaskStatus) (<-chan *queue.Task, error) {
@@ -53,11 +51,7 @@ func (c *Client) GetTasks(status queue.TaskStatus) (<-chan *queue.Task, error) {
 			}
 
 			// parse task data
-			task := new(queue.Task)
-			task.ID = t.Id
-			task.Data = t.Data
-			task.CreationDate = t.CreatedAt.AsTime()
-			task.Status = queue.TaskStatus(t.Status)
+			task := proto.ProtoTask2Task(t)
 			// send task to channel
 			ch <- task
 
@@ -97,11 +91,7 @@ func (c *Client) UpdateTask(id string, status queue.TaskStatus) error {
 func (c *Client) AddTask(t *queue.Task) error {
 	client := proto.NewLiteQClient(c.conn)
 	// prepare request
-	request := new(proto.Task)
-	request.Id = t.ID
-	request.Data = t.Data
-	request.CreatedAt = timestamppb.New(t.CreationDate)
-	request.Status = proto.TaskStatus(t.Status)
+	request := proto.Task2ProtoTask(t)
 	// send request
 	if _, err := client.AddTask(context.Background(), request); err != nil {
 		return err
@@ -122,11 +112,7 @@ func (c *Client) GetCurrentTasks(status queue.TaskStatus) (*[]*queue.Task, error
 	// return
 	tasks := make([]*queue.Task, 0)
 	for _, r := range resp.Tasks {
-		t := new(queue.Task)
-		t.ID = r.Id
-		t.Data = r.Data
-		t.CreationDate = r.CreatedAt.AsTime()
-		t.Status = queue.TaskStatus(r.Status)
+		t := proto.ProtoTask2Task(r)
 		tasks = append(tasks, t)
 	}
 

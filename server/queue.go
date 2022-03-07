@@ -7,7 +7,6 @@ import (
 	"log"
 
 	"google.golang.org/protobuf/types/known/emptypb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // QueueService
@@ -34,12 +33,7 @@ func (*server) GetTasks(req *proto.GetTaskRequest, stream proto.LiteQ_GetTasksSe
 	for _, t := range *queue.Q.Tasks {
 		if t.Status == reqTaskStatus {
 			// log.Printf("[server] streaming existing task %s to [%s]\n", t.ID, reqTaskStatus) // debug
-			if err := stream.Send(&proto.Task{
-				Id:        t.ID,
-				Data:      t.Data,
-				CreatedAt: timestamppb.New(t.CreationDate),
-				Status:    *proto.TaskStatus(t.Status).Enum(),
-			}); err != nil {
+			if err := stream.Send(proto.Task2ProtoTask(t)); err != nil {
 				log.Printf("[server] Failed to stream task, %s\n", err.Error())
 				return err
 			}
@@ -65,12 +59,7 @@ taskChanLoop:
 
 		case t := <-ch:
 			// log.Printf("[server] streaming (updated/new) task %s to [%s]\n", t.ID, reqTaskStatus) // debug
-			if err := stream.Send(&proto.Task{
-				Id:        t.ID,
-				Data:      t.Data,
-				CreatedAt: timestamppb.New(t.CreationDate),
-				Status:    *proto.TaskStatus(t.Status).Enum(),
-			}); err != nil {
+			if err := stream.Send(proto.Task2ProtoTask(t)); err != nil {
 				log.Printf("[server] (Failed to send new task through stream) Err: %s\n", err.Error())
 				return err
 			}
@@ -90,11 +79,7 @@ func (*server) TaskStatusUpdate(ctx context.Context, req *proto.TaskStatusUpdate
 }
 
 func (*server) AddTask(ctx context.Context, in *proto.Task) (*emptypb.Empty, error) {
-	t := new(queue.Task)
-	t.ID = in.Id
-	t.Data = in.Data
-	t.CreationDate = in.CreatedAt.AsTime()
-	t.Status = queue.TaskStatus(in.Status)
+	t := proto.ProtoTask2Task(in)
 	queue.Q.Add(t)
 	return new(emptypb.Empty), nil
 }
@@ -105,11 +90,7 @@ func (*server) GetCurrentTasks(ctx context.Context, in *proto.GetTaskRequest) (*
 	tasks := make([]*proto.Task, 0)
 
 	for _, t := range *currentTasks {
-		task := new(proto.Task)
-		task.Id = t.ID
-		task.Data = t.Data
-		task.CreatedAt = timestamppb.New(t.CreationDate)
-		task.Status = proto.TaskStatus(t.Status)
+		task := proto.Task2ProtoTask(t)
 		tasks = append(tasks, task)
 	}
 
