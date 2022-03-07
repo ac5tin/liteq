@@ -26,6 +26,7 @@ type LiteQClient interface {
 	GetTasks(ctx context.Context, in *GetTaskRequest, opts ...grpc.CallOption) (LiteQ_GetTasksClient, error)
 	TaskStatusUpdate(ctx context.Context, in *TaskStatusUpdateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	AddTask(ctx context.Context, in *Task, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetCurrentTasks(ctx context.Context, in *GetTaskRequest, opts ...grpc.CallOption) (*TaskListResponse, error)
 }
 
 type liteQClient struct {
@@ -86,6 +87,15 @@ func (c *liteQClient) AddTask(ctx context.Context, in *Task, opts ...grpc.CallOp
 	return out, nil
 }
 
+func (c *liteQClient) GetCurrentTasks(ctx context.Context, in *GetTaskRequest, opts ...grpc.CallOption) (*TaskListResponse, error) {
+	out := new(TaskListResponse)
+	err := c.cc.Invoke(ctx, "/liteq.LiteQ/GetCurrentTasks", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LiteQServer is the server API for LiteQ service.
 // All implementations must embed UnimplementedLiteQServer
 // for forward compatibility
@@ -93,6 +103,7 @@ type LiteQServer interface {
 	GetTasks(*GetTaskRequest, LiteQ_GetTasksServer) error
 	TaskStatusUpdate(context.Context, *TaskStatusUpdateRequest) (*emptypb.Empty, error)
 	AddTask(context.Context, *Task) (*emptypb.Empty, error)
+	GetCurrentTasks(context.Context, *GetTaskRequest) (*TaskListResponse, error)
 	mustEmbedUnimplementedLiteQServer()
 }
 
@@ -108,6 +119,9 @@ func (UnimplementedLiteQServer) TaskStatusUpdate(context.Context, *TaskStatusUpd
 }
 func (UnimplementedLiteQServer) AddTask(context.Context, *Task) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddTask not implemented")
+}
+func (UnimplementedLiteQServer) GetCurrentTasks(context.Context, *GetTaskRequest) (*TaskListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCurrentTasks not implemented")
 }
 func (UnimplementedLiteQServer) mustEmbedUnimplementedLiteQServer() {}
 
@@ -179,6 +193,24 @@ func _LiteQ_AddTask_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LiteQ_GetCurrentTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTaskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LiteQServer).GetCurrentTasks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/liteq.LiteQ/GetCurrentTasks",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LiteQServer).GetCurrentTasks(ctx, req.(*GetTaskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LiteQ_ServiceDesc is the grpc.ServiceDesc for LiteQ service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -193,6 +225,10 @@ var LiteQ_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AddTask",
 			Handler:    _LiteQ_AddTask_Handler,
+		},
+		{
+			MethodName: "GetCurrentTasks",
+			Handler:    _LiteQ_GetCurrentTasks_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

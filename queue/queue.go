@@ -97,3 +97,13 @@ func (q *Queue) GetCurrentAllTasks() *[]Task {
 	}
 	return t
 }
+
+func (q *Queue) GetCurrentTasks(status TaskStatus) *[]*Task {
+	t := new([]*Task)
+	for _, task := range *q.Tasks {
+		if task.Status == status {
+			*t = append(*t, task)
+		}
+	}
+	return t
+}

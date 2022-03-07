@@ -98,3 +98,22 @@ func (*server) AddTask(ctx context.Context, in *proto.Task) (*emptypb.Empty, err
 	queue.Q.Add(t)
 	return new(emptypb.Empty), nil
 }
+
+func (*server) GetCurrentTasks(ctx context.Context, in *proto.GetTaskRequest) (*proto.TaskListResponse, error) {
+	currentTasks := queue.Q.GetCurrentTasks(queue.TaskStatus(in.Status))
+
+	tasks := make([]*proto.Task, 0)
+
+	for _, t := range *currentTasks {
+		task := new(proto.Task)
+		task.Id = t.ID
+		task.Data = t.Data
+		task.CreatedAt = timestamppb.New(t.CreationDate)
+		task.Status = proto.TaskStatus(t.Status)
+		tasks = append(tasks, task)
+	}
+
+	resp := new(proto.TaskListResponse)
+	resp.Tasks = tasks
+	return resp, nil
+}

@@ -108,3 +108,27 @@ func (c *Client) AddTask(t *queue.Task) error {
 	}
 	return nil
 }
+
+func (c *Client) GetCurrentTasks(status queue.TaskStatus) (*[]*queue.Task, error) {
+	client := proto.NewLiteQClient(c.conn)
+	// prepare request
+	request := new(proto.GetTaskRequest)
+	request.Status = proto.TaskStatus(status)
+	resp, err := client.GetCurrentTasks(context.Background(), request)
+	if err != nil {
+		return nil, err
+	}
+
+	// return
+	tasks := make([]*queue.Task, 0)
+	for _, r := range resp.Tasks {
+		t := new(queue.Task)
+		t.ID = r.Id
+		t.Data = r.Data
+		t.CreationDate = r.CreatedAt.AsTime()
+		t.Status = queue.TaskStatus(r.Status)
+		tasks = append(tasks, t)
+	}
+
+	return &tasks, nil
+}

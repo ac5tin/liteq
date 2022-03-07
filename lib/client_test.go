@@ -256,6 +256,22 @@ func TestClient(t *testing.T) {
 		assert.Equal(t, len(values)+len(values2)+len(values3)+len(values4), len(tasks))
 	})
 
+	// get data tasks again
+	// =============================================
+	t.Run("Get tasks", func(t *testing.T) {
+		newTasks, err := c.GetCurrentTasks(queue.TaskStatusCreated)
+		if err != nil {
+			t.Error(err.Error())
+		}
+		doneTasks, err := c.GetCurrentTasks(queue.TaskStatusDone)
+		if err != nil {
+			t.Error(err.Error())
+		}
+
+		totalLen := len(values) + len(values2) + len(values3) + len(values4)
+		assert.Equal(t, totalLen, len(*newTasks)+len(*doneTasks))
+	})
+
 	// connection
 	// =============================================
 	t.Run("GRPC Connection", func(t *testing.T) {

@@ -26,9 +26,12 @@ message TaskStatusUpdateRequest {
   TaskStatus status = 2;
 }
 
+message TaskListResponse { repeated Task tasks = 1; }
+
 service LiteQ {
   rpc GetTasks(GetTaskRequest) returns (stream Task) {}
   rpc TaskStatusUpdate(TaskStatusUpdateRequest)
       returns (google.protobuf.Empty) {}
   rpc AddTask(Task) returns (google.protobuf.Empty) {}
+  rpc GetCurrentTasks(GetTaskRequest) returns (TaskListResponse) {}
 }
