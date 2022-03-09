@@ -16,7 +16,12 @@ clean:
 protoc:
 	protoc --go_out=. --go-grpc_out=. ./queue/proto/queue.proto
 
-build-podman:
+
+clean-podman:
+	podman image prune
+	podman image rm liteq
+
+build-podman: clean-podman
 	podman build --platform linux/amd64,linux/arm64 --format docker --manifest liteq .
 
 build-docker:
