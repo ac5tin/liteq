@@ -2,6 +2,7 @@ package queue
 
 import (
 	"errors"
+	"sync"
 
 	uf "github.com/ac5tin/usefulgo"
 )
@@ -17,6 +18,7 @@ type QueueChan struct {
 }
 
 type Queue struct {
+	sync.RWMutex
 	Tasks  *[]*Task
 	TaskCh *map[TaskStatus]map[string]QueueChan // each TaskStatus has it's own individual Task channel
 }
@@ -49,7 +51,9 @@ func NewQueue() *Queue {
 // Add New Task
 func (q *Queue) Add(t *Task) {
 	t.Status = TaskStatusCreated
+	q.Lock()
 	*q.Tasks = append(*q.Tasks, t)
+	q.Unlock()
 
 	for _, qc := range (*q.TaskCh)[TaskStatusCreated] {
 		*qc.Chan <- t
